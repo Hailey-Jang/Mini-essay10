@@ -1,0 +1,113 @@
+---
+title: "Youth Receiving Intervention Serivices"
+author: 
+  - Hailey Jang 
+thanks: "Code and data are available at: https://github.com/Hailey-Jang/Mini-essay10.git."
+date: today
+date-format: long
+format: pdf
+toc: true
+number-sections: true
+bibliography: references.bib
+---
+# Introduction
+In recent years, the dynamics of child intervention services have garnered significant attention, particularly in understanding the factors influencing the number of children and youth requiring such services. This study focuses on the province of Alberta, Toronto, analyzing the average monthly number of children and youth receiving child intervention services from 2013 to 2023. By employing a robust statistical framework with @citeR, we aim to uncover patterns and trends within this crucial social sector, providing insights into the efficacy and reach of child welfare interventions. Utilizing the Children and Family Services dataset, this paper explores the suitability of regression models, including negative binomial regressions, to accurately model and interpret the count data represented by the average monthly service recipients. The findings of this research are intended to contribute to the ongoing discourse on child welfare, offering evidence-based recommendations to enhance the effectiveness of child intervention services and thereby support the well-being of vulnerable populations.
+
+The structure of the paper is organized as follows: @sec-data delves into the broader context of the dataset, emphasizing the crucial aspects of measurement relevant to our study. @sec-model elucidates the setup and justification of our chosen negative binomial regression. Lastly, @sec-Results presents the study's contributions to our understanding of child intervention services in Alberta. 
+
+```{r}
+#| include: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(palmerpenguins)
+library(readr)
+library(here)
+```
+
+# Data {#sec-data}
+Before delving into the statistical modeling of child intervention services data, a thorough examination of the dataset is imperative. This initial step involves scrutinizing the dataset's structure, encompassing the yearly distribution of data points, geographical details, the types of care provided, and the demographics of the children and youth served. Specifically, the dataset comprises entries from 2013 to 2023, detailing the average monthly number of children and youth in Alberta, Toronto, who are receiving child intervention services. Each record categorizes the data by year, type of care (such as Temporary Care, Permanent Care, etc.), and the recipients' gender. This exploration aims to identify any preliminary trends, data inconsistencies, or missing values that could influence the subsequent statistical analysis. Understanding these aspects is crucial for ensuring accurate data handling and for selecting the most appropriate regression model for the analysis.
+
+# Model {#sec-model}
+
+Given the nature of our dataset, which comprises count data representing the average monthly number of children and youth receiving child intervention services in Alberta, Toronto, the choice of an appropriate statistical model is paramount. Our response variable is overdispersed count data, evidenced by preliminary data analysis indicating that the variance significantly exceeds the mean. Such overdispersion is a common challenge in modeling count data, where the assumption of equal mean and variance (a key assumption of Poisson regression) does not hold. To address this, we employ Negative Binomial Regression (NBR), a robust alternative that accommodates overdispersion by introducing an extra parameter to model the variance independently of the mean.
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+library(MASS)  # For glm.nb
+library(dplyr) # For data manipulation
+library(readr)
+
+# Load and prepare the data
+data <- read_csv(here::here("data/raw_data/raw_raw_data.csv"), show_col_types = FALSE)
+data <- data %>%
+  mutate(
+    Year = factor(Year),
+    Geography = factor(Geography),
+    TypeOfCare = factor(`Type of Care`),
+    Sex = factor(Sex),
+    Count = as.numeric(`Average Monthly Number`)
+  )
+
+# Check for missing values
+summary(data)
+```
+
+## Rationale for Negative Binomial Regression
+
+Negative Binomial Regression is particularly advantageous for our analysis for several reasons:
+
+1. **Flexibility in Modeling Overdispersed Counts:** The NBR model is ideal for data where the count variance exceeds the mean, allowing for a more accurate and reliable fit than Poisson regression, which assumes equal mean and variance.
+
+2. **Incorporation of Explanatory Variables:** The model can incorporate multiple covariates, enabling us to examine the effects of different factors, such as the year, type of care, and other relevant variables, on the count of children and youth in intervention services.
+
+3. **Interpretability of Results:** NBR provides coefficients that can be exponentiated to obtain incidence rate ratios, offering straightforward interpretability in the context of our study.
+
+## Model Setup
+
+We specify our Negative Binomial Regression model as follows:
+
+$\text{log}(\mu_i) = \beta_0 + \beta_1 \text{Year}_i + \beta_2 \text{Type of Care}_i + \ldots$
+
+where $\mu_i$ represents the expected count for the $i$ -th observation, $\beta_0$ is the intercept, and $\beta_1$, $\beta_2$, $\beta_3$ are the coefficients of the explanatory variables. The subscript $i$ indexes the data points in our dataset.
+
+To implement this model in R, we use the `glm.nb` function from the MASS package, which fits the regression model via maximum likelihood estimation. The following R script demonstrates this process:
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+
+# Assuming 'data' is already loaded and contains the columns of interest
+
+# Check the levels of each factor
+sapply(data[c("Year", "Geography", "TypeOfCare", "Sex")], function(x) length(unique(x)))
+
+model <- glm.nb(Count ~ Year + TypeOfCare + Sex, data = data)
+
+# Check the model summary
+summary(model)
+```
+
+
+The `summary` function provides a comprehensive overview of the model's coefficients, their statistical significance, and diagnostic measures to assess the model's fit. Interpreting these results allows us to understand the influence of each explanatory variable on the average monthly number of children and youth receiving child intervention services.
+
+## Justification of the Model
+
+The selection of Negative Binomial Regression is justified by the data's inherent characteristics and the model's alignment with our research objectives. By accommodating the overdispersion in our count data, the NBR model ensures robust, reliable estimates that enhance our understanding of the factors influencing child intervention services in Alberta. This approach not only enhances the precision of our estimates but also contributes to the methodological rigor of our analysis, ensuring that our findings can reliably inform policy and practice in child welfare services.
+
+# Results {#sec-Results}
+The Negative Binomial Regression model was employed to analyze the data on the average monthly number of children and youth receiving child intervention services in Alberta, Toronto. This section presents the findings from the model, interpreting the estimated coefficients, the model's goodness-of-fit, and their implications for understanding the dynamics of child intervention services.
+
+## Model Interpretation
+The estimated coefficients from the Negative Binomial Regression model provide insights into the factors that are significantly associated with the variations in the average monthly number of children and youth in care. 
+
+## Implications
+The findings from this study have important implications for policymakers and stakeholders involved in child welfare. Understanding the factors influencing the average monthly number of children and youth in intervention services allows for more informed decision-making and strategic planning. For example, the trend over the years can indicate the effectiveness of existing policies or highlight the need for new strategies to address the changing dynamics in child intervention needs.
+
+# References
